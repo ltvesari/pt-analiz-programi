@@ -5,68 +5,29 @@ import base64
 # --- SAYFA AYARLARI ---
 st.set_page_config(page_title="PT Pro: Analiz Paneli", layout="wide", page_icon="🏋️‍♂️")
 
-# --- CSS İLE ÖZEL TASARIM (HAVALI GÖRÜNÜM) ---
+# --- CSS İLE ÖZEL TASARIM (ARAYÜZ) ---
 st.markdown("""
 <style>
-    /* Genel Arka Plan ve Yazı Tipi İyileştirmeleri */
-    .stApp {
-        background-color: #0e1117;
-    }
-    
-    /* BUTON TASARIMI */
+    .stApp { background-color: #0e1117; }
     div.stButton > button {
-        width: 100%;
-        height: 80px;  /* Butonları büyük yap */
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Mor-Mavi Gradyan */
-        color: white !important;
-        font-size: 20px !important;
-        font-weight: 700 !important;
-        border: none;
-        border-radius: 15px; /* Yuvarlak köşeler */
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        width: 100%; height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important; font-size: 20px !important; font-weight: 700 !important;
+        border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;
     }
-
-    /* HOVER EFEKTİ (Üzerine gelince) */
     div.stButton > button:hover {
-        transform: translateY(-5px); /* Yukarı zıplama */
-        box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6); /* Parlama efekti */
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); /* Renk yer değiştirsin */
-        color: #ffffff !important;
-        border: none;
+        transform: translateY(-5px); box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6);
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: #ffffff !important;
     }
-
-    /* Aktif/Basılı Tutma Efekti */
-    div.stButton > button:active {
-        transform: scale(0.98);
-        box-shadow: none;
-    }
-
-    /* Başlık ve Metin Renkleri */
-    h1, h2, h3 {
-        color: #ffffff !important;
-        font-family: 'Helvetica Neue', sans-serif;
-    }
-    
-    /* Input Alanlarını Güzelleştir */
-    .stTextInput > div > div > input {
-        border-radius: 10px;
-    }
-    
-    /* Expander (Açılır Kutu) Tasarımı */
-    .streamlit-expanderHeader {
-        background-color: #262730;
-        border-radius: 10px;
-        color: white;
-    }
+    div.stButton > button:active { transform: scale(0.98); }
+    h1, h2, h3 { color: #ffffff !important; font-family: 'Helvetica Neue', sans-serif; }
+    .streamlit-expanderHeader { background-color: #262730; border-radius: 10px; color: white; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- VERİTABANI: ANALİZ MANTIĞI ---
+# --- VERİTABANI ---
 LOGIC_DB = {
-    # 1. STATİK POSTÜR
     "Static": {
         "Ayaklar: Dışa Dönük": {"view": "Anterior", "over": ["Soleus", "Lat. Gastrocnemius", "Biceps Femoris (Short)"], "under": ["Med. Gastrocnemius", "Med. Hamstring"]},
         "Dizler: İçe Dönük (Valgus)": {"view": "Anterior", "over": ["Adductor Complex", "TFL", "Vastus Lat."], "under": ["Gluteus Med/Max", "VMO"]},
@@ -77,7 +38,6 @@ LOGIC_DB = {
         "Ayaklar: İçe Basma (Düz Taban)": {"view": "Posterior", "over": ["Peroneals", "Lat. Gastrocnemius"], "under": ["Ant/Post Tibialis", "Gluteus Medius"]},
         "LPHC: Asimetrik Kalça": {"view": "Posterior", "over": ["Quadratus Lumborum", "TFL"], "under": ["Gluteus Medius"]}
     },
-    # 2. OVERHEAD SQUAT
     "OHSquat": {
         "Ayaklar: Dışa Dönüyor": {"view": "Anterior", "over": ["Soleus", "Lat. Gastrocnemius", "Biceps Femoris", "TFL"], "under": ["Med. Gastrocnemius", "Med. Hamstring"]},
         "Ayaklar: Düzleşiyor": {"view": "Anterior", "over": ["Peroneals", "Biceps Femoris"], "under": ["Ant. Tibialis", "Post. Tibialis"]},
@@ -87,7 +47,6 @@ LOGIC_DB = {
         "Omuzlar: Kollar Öne Düşüyor": {"view": "Lateral", "over": ["Lats", "Pectorals"], "under": ["Mid/Lower Trap.", "Rotator Cuff"]},
         "LPHC: Asimetrik Kayma": {"view": "Posterior", "over": ["Adductor Complex"], "under": ["Gluteus Medius"]}
     },
-    # 3. PUSH-UP
     "Pushup": {
         "Belin Çökmesi": {"over": ["Erector Spinae", "Hip Flexors"], "under": ["Core", "Gluteus Max"]},
         "Belin Yuvarlaklaşması": {"over": ["Rectus Abd."], "under": ["Core"]},
@@ -95,13 +54,11 @@ LOGIC_DB = {
         "Kanatlaşma": {"over": ["Pectoralis Minor"], "under": ["Serratus Ant.", "Mid/Lower Trap."]},
         "Başın Geri Gitmesi": {"over": ["Upper Trap."], "under": ["Deep Cervical Flexors"]}
     },
-    # 4. ROW
     "Row": {
         "LPHC: Bel Çukuru Artıyor": {"over": ["Hip Flexors"], "under": ["Core"]},
         "Omuzlar: Yukarı Kalkıyor": {"over": ["Upper Trap."], "under": ["Mid/Lower Trap."]},
         "Baş: Öne Gidiyor": {"over": ["Upper Trap."], "under": ["Deep Cervical Flexors"]}
     },
-    # 5. OH PRESS
     "OHPress": {
         "LPHC: Bel Çukuru Artıyor": {"over": ["Hip Flexors"], "under": ["Core"]},
         "Omuzlar: Yukarı Kalkıyor": {"over": ["Upper Trap."], "under": ["Mid/Lower Trap."]},
@@ -129,60 +86,134 @@ for key in ['static_results', 'ohsquat_results', 'pushup_results', 'row_results'
     if key not in st.session_state: st.session_state[key] = []
 if 'cardio_result' not in st.session_state: st.session_state['cardio_result'] = None
 
-# --- NAVİGASYON ---
-def go_to(page):
-    st.session_state['current_page'] = page
+# --- MODERN PDF CLASS ---
+class ModernPDF(FPDF):
+    def header(self):
+        # Üst Şerit (Mor)
+        self.set_fill_color(118, 75, 162) # #764ba2 rengi
+        self.rect(0, 0, 210, 40, 'F')
+        # Başlık
+        self.set_font('Arial', 'B', 24)
+        self.set_text_color(255, 255, 255)
+        self.cell(0, 25, 'PT PRO ANALIZ RAPORU', 0, 1, 'C')
+        self.ln(10)
 
-def go_home():
-    st.session_state['current_page'] = "home"
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.set_text_color(128, 128, 128)
+        self.cell(0, 10, f'Sayfa {self.page_no()} - PT Pro Ozel Yazilimi', 0, 0, 'C')
 
-# --- PDF OLUŞTURMA ---
-def create_pdf(student_info, static_res, ohsquat_res, pushup_res, row_res, ohpress_res, cardio_res, analysis):
-    pdf = FPDF()
+def create_modern_pdf(student_info, static_res, ohsquat_res, pushup_res, row_res, ohpress_res, cardio_res, analysis):
+    pdf = ModernPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, clean_text("PT Pro: Hareket ve Postur Analizi"), ln=True, align='C')
-    pdf.set_font("Arial", size=10)
-    info = f"Ogrenci: {student_info['name']} | Yas: {student_info['age']} | Tarih: {student_info['date']}"
-    pdf.cell(0, 10, clean_text(info), ln=True, align='C')
-    pdf.line(10, 25, 200, 25); pdf.ln(5)
-
-    if cardio_res:
-        pdf.set_font("Arial", 'B', 12); pdf.cell(0, 10, clean_text("1. Kardiyo (YMCA)"), ln=True)
-        pdf.set_font("Arial", size=10); pdf.cell(0, 8, clean_text(f"Sonuc: {cardio_res['rating']} ({cardio_res['pulse']} bpm)"), ln=True); pdf.ln(2)
-
-    pdf.set_font("Arial", 'B', 12); pdf.cell(0, 10, clean_text("2. Gozlem Bulgulari"), ln=True)
-    def print_t(title, data):
-        if data:
-            pdf.set_font("Arial", 'B', 10); pdf.cell(0, 6, clean_text(title), ln=True)
-            pdf.set_font("Arial", size=10); [pdf.cell(0, 5, clean_text(f" - {i}"), ln=True) for i in data]
-            pdf.ln(2)
-    print_t("Statik Postur", static_res)
-    print_t("Overhead Squat", ohsquat_res)
-    print_t("Push-up", pushup_res)
-    print_t("Row", row_res)
-    print_t("Press", ohpress_res)
-    pdf.ln(3)
-
-    pdf.set_font("Arial", 'B', 12); pdf.cell(0, 10, clean_text("3. Egzersiz Plani"), ln=True)
-    pdf.set_text_color(220, 50, 50); pdf.set_font("Arial", 'B', 10); pdf.cell(0, 8, clean_text("ESNET (Kisa Kaslar):"), ln=True)
-    pdf.set_text_color(0,0,0); pdf.set_font("Arial", size=10); pdf.multi_cell(0, 6, clean_text(", ".join(sorted(list(analysis['overactive']))))); pdf.ln(2)
-    pdf.set_text_color(50, 150, 50); pdf.set_font("Arial", 'B', 10); pdf.cell(0, 8, clean_text("GUCLENDIR (Uzun Kaslar):"), ln=True)
-    pdf.set_text_color(0,0,0); pdf.set_font("Arial", size=10); pdf.multi_cell(0, 6, clean_text(", ".join(sorted(list(analysis['underactive'])))))
     
+    # 1. BÖLÜM: ÖĞRENCİ BİLGİ KARTI
+    pdf.set_fill_color(240, 240, 240) # Açık Gri
+    pdf.rect(10, 45, 190, 25, 'F')
+    
+    pdf.set_y(50)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_text_color(50, 50, 50)
+    info_text = f"OGRENCI: {clean_text(student_info['name']).upper()}   |   YAS: {student_info['age']}   |   TARIH: {student_info['date']}"
+    pdf.cell(0, 5, info_text, 0, 1, 'C')
+    
+    if cardio_res:
+        pdf.set_font("Arial", '', 11)
+        pdf.set_text_color(118, 75, 162) # Mor
+        cardio_text = f"KARDIYO SEVIYESI: {clean_text(cardio_res['rating'])} ({cardio_res['pulse']} bpm)"
+        pdf.cell(0, 8, cardio_text, 0, 1, 'C')
+    
+    pdf.ln(15)
+
+    # 2. BÖLÜM: BULGULAR (Temiz Liste)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, clean_text("TESPIT EDILEN DURUS VE HAREKET BOZUKLUKLARI"), 0, 1, 'L')
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y()) # Çizgi
+    pdf.ln(5)
+
+    pdf.set_font("Arial", '', 10)
+    
+    # Tüm testleri tek listede topla ama başlıklarıyla
+    def add_section(title, data):
+        if data:
+            pdf.set_font("Arial", 'B', 11)
+            pdf.set_text_color(118, 75, 162) # Başlık Moru
+            pdf.cell(0, 8, clean_text(title), 0, 1)
+            pdf.set_font("Arial", '', 10)
+            pdf.set_text_color(50, 50, 50)
+            for item in data:
+                pdf.cell(5) # Girinti
+                pdf.cell(0, 5, clean_text(f"- {item}"), 0, 1)
+            pdf.ln(3)
+
+    add_section("Statik Postur Analizi", static_res)
+    add_section("Overhead Squat Analizi", ohsquat_res)
+    add_section("Push-up Analizi", pushup_res)
+    add_section("Standing Row Analizi", row_res)
+    add_section("Overhead Press Analizi", ohpress_res)
+    
+    pdf.ln(5)
+
+    # 3. BÖLÜM: EYLEM PLANI (Renkli Kutular)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, clean_text("DUZELTICI EGZERSIZ STRATEJISI"), 0, 1, 'L')
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(8)
+
+    # Kırmızı Kutu (ESNET)
+    pdf.set_fill_color(255, 235, 238) # Çok açık kırmızı
+    pdf.rect(10, pdf.get_y(), 190, 30, 'F') # Arka plan kutusu
+    
+    pdf.set_xy(15, pdf.get_y() + 3)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_text_color(200, 0, 0) # Koyu Kırmızı Yazı
+    pdf.cell(0, 6, clean_text("1. ESNETME & FOAM ROLLER (Asiri Aktif Kaslar)"), 0, 1)
+    
+    pdf.set_font("Arial", '', 10)
+    pdf.set_text_color(50, 50, 50)
+    pdf.set_x(15)
+    over_text = clean_text(", ".join(sorted(list(analysis['overactive']))))
+    pdf.multi_cell(180, 5, over_text)
+    
+    pdf.ln(15) # Boşluk
+
+    # Yeşil Kutu (GÜÇLENDİR)
+    pdf.set_fill_color(232, 245, 233) # Çok açık yeşil
+    # Dinamik yükseklik ayarı zor olduğu için sabit kutu yerine sadece başlığı boyayalım veya düz devam edelim.
+    # Burada sabit kutu mantığıyla devam ediyoruz.
+    current_y = pdf.get_y()
+    pdf.rect(10, current_y, 190, 30, 'F')
+    
+    pdf.set_xy(15, current_y + 3)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_text_color(0, 120, 0) # Koyu Yeşil
+    pdf.cell(0, 6, clean_text("2. GUCLENDIRME & AKTIVASYON (Az Aktif Kaslar)"), 0, 1)
+    
+    pdf.set_font("Arial", '', 10)
+    pdf.set_text_color(50, 50, 50)
+    pdf.set_x(15)
+    under_text = clean_text(", ".join(sorted(list(analysis['underactive']))))
+    pdf.multi_cell(180, 5, under_text)
+
     return pdf.output(dest='S').encode('latin-1', 'replace')
+
+# --- NAVİGASYON ---
+def go_to(page): st.session_state['current_page'] = page
+def go_home(): st.session_state['current_page'] = "home"
 
 # =========================================================
 # === UYGULAMA AKIŞI ===
 # =========================================================
 
-# --- 1. DASHBOARD (ANA MENÜ) ---
+# --- 1. DASHBOARD ---
 if st.session_state['current_page'] == "home":
     st.markdown("<h1 style='text-align: center;'>🏋️‍♂️ PT Pro: Analiz Paneli</h1>", unsafe_allow_html=True)
     st.write("")
     
-    # Öğrenci Bilgileri
-    with st.expander("📝 ÖĞRENCİ BİLGİLERİ (Girmek için tıkla)", expanded=True):
+    with st.expander("📝 ÖĞRENCİ BİLGİLERİ", expanded=True):
         c1, c2, c3 = st.columns(3)
         name = c1.text_input("Ad Soyad", value=st.session_state['student_data']['name'])
         age = c2.number_input("Yaş", 18, 99, st.session_state['student_data']['age'])
@@ -192,7 +223,6 @@ if st.session_state['current_page'] == "home":
 
     st.write("### 🚀 TEST SEÇİMİ")
     
-    # GRID BUTONLAR (Uniform Renk ve Tasarım)
     col1, col2 = st.columns(2)
     with col1:
         if st.button("🧍 STATİK POSTÜR", use_container_width=True): go_to("static")
@@ -212,18 +242,14 @@ if st.session_state['current_page'] == "home":
         if st.button("🫀 3MIN YMCA KARDİYO", use_container_width=True): go_to("cardio")
 
     st.write("---")
-    # Rapor Butonu (Aynı tasarım, sadece en altta)
     if st.button("📊 SONUÇ VE RAPORU GÖR", use_container_width=True):
         go_to("report")
 
-
-# --- 2. TEST SAYFALARI ---
-
+# --- 2. TEST SAYFALARI (STANDART) ---
 elif st.session_state['current_page'] == "static":
     c_back, c_title = st.columns([1, 4])
     with c_back: st.button("⬅️ Geri", on_click=go_home)
     with c_title: st.header("Statik Postür Analizi")
-    
     t1, t2, t3 = st.tabs(["Anterior", "Lateral", "Posterior"])
     temp = st.session_state['static_results'].copy()
     def check_static(view, con):
@@ -240,7 +266,6 @@ elif st.session_state['current_page'] == "ohsquat":
     c_back, c_title = st.columns([1, 4])
     with c_back: st.button("⬅️ Geri", on_click=go_home)
     with c_title: st.header("Overhead Squat Analizi")
-    
     t1, t2, t3 = st.tabs(["Anterior", "Lateral", "Posterior"])
     temp = st.session_state['ohsquat_results'].copy()
     def check_ohs(view, con):
@@ -257,7 +282,6 @@ elif st.session_state['current_page'] == "pushup":
     c_back, c_title = st.columns([1, 4])
     with c_back: st.button("⬅️ Geri", on_click=go_home)
     with c_title: st.header("Push-up Analizi")
-    
     temp = st.session_state['pushup_results'].copy()
     c = st.columns(2)
     for i, item in enumerate(LOGIC_DB["Pushup"].keys()):
@@ -270,7 +294,6 @@ elif st.session_state['current_page'] == "row":
     c_back, c_title = st.columns([1, 4])
     with c_back: st.button("⬅️ Geri", on_click=go_home)
     with c_title: st.header("Standing Row Analizi")
-    
     temp = st.session_state['row_results'].copy()
     c = st.columns(2)
     for i, item in enumerate(LOGIC_DB["Row"].keys()):
@@ -283,7 +306,6 @@ elif st.session_state['current_page'] == "ohpress":
     c_back, c_title = st.columns([1, 4])
     with c_back: st.button("⬅️ Geri", on_click=go_home)
     with c_title: st.header("Overhead Press Analizi")
-    
     temp = st.session_state['ohpress_results'].copy()
     c = st.columns(2)
     for i, item in enumerate(LOGIC_DB["OHPress"].keys()):
@@ -296,7 +318,6 @@ elif st.session_state['current_page'] == "cardio":
     c_back, c_title = st.columns([1, 4])
     with c_back: st.button("⬅️ Geri", on_click=go_home)
     with c_title: st.header("3 Min YMCA Testi")
-    
     st.info("Test sonrası 1 dakikalık nabız sayımını giriniz.")
     pulse = st.number_input("Ölçülen Nabız", 40, 220)
     if st.button("HESAPLA"):
@@ -305,7 +326,6 @@ elif st.session_state['current_page'] == "cardio":
         st.success(f"Sonuç: **{r}**")
 
 # --- 3. RAPOR SAYFASI ---
-
 elif st.session_state['current_page'] == "report":
     c_back, c_title = st.columns([1, 4])
     with c_back: st.button("⬅️ Geri", on_click=go_home)
@@ -334,15 +354,14 @@ elif st.session_state['current_page'] == "report":
     
     st.divider()
     
-    # PDF Butonu da aynı tasarımda olacak
     if st.button("📥 RAPORU İNDİR (PDF)"):
         try:
-            pdf_bytes = create_pdf(st.session_state['student_data'], st.session_state['static_results'], 
+            pdf_bytes = create_modern_pdf(st.session_state['student_data'], st.session_state['static_results'], 
                                    st.session_state['ohsquat_results'], st.session_state['pushup_results'], 
                                    st.session_state['row_results'], st.session_state['ohpress_results'], 
                                    st.session_state['cardio_result'], {"overactive": all_over, "underactive": all_under})
             b64 = base64.b64encode(pdf_bytes).decode()
-            href = f'<a href="data:application/octet-stream;base64,{b64}" download="Rapor.pdf" style="background-color:white; color:#764ba2; padding:15px; text-decoration:none; border-radius:10px; font-weight:bold; display:block; text-align:center; border: 2px solid #764ba2;">📄 DOSYAYI CİHAZINA İNDİRMEK İÇİN TIKLA</a>'
+            href = f'<a href="data:application/octet-stream;base64,{b64}" download="PT_Pro_Rapor.pdf" style="background-color:white; color:#764ba2; padding:15px; text-decoration:none; border-radius:10px; font-weight:bold; display:block; text-align:center; border: 2px solid #764ba2;">📄 DOSYAYI CİHAZINA İNDİRMEK İÇİN TIKLA</a>'
             st.markdown(href, unsafe_allow_html=True)
         except Exception as e:
             st.error(f"Hata: {e}")
