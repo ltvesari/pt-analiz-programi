@@ -95,7 +95,7 @@ class ModernPDF(FPDF):
         # Başlık
         self.set_font('Arial', 'B', 24)
         self.set_text_color(255, 255, 255)
-        self.cell(0, 25, 'PT PRO ANALIZ RAPORU', 0, 1, 'C')
+        self.cell(0, 25, 'LEVENT HOCA ANALIZ RAPORU', 0, 1, 'C')
         self.ln(10)
 
     def footer(self):
@@ -365,3 +365,4 @@ elif st.session_state['current_page'] == "report":
             st.markdown(href, unsafe_allow_html=True)
         except Exception as e:
             st.error(f"Hata: {e}")
+
