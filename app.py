@@ -3,9 +3,68 @@ from fpdf import FPDF
 import base64
 
 # --- SAYFA AYARLARI ---
-st.set_page_config(page_title="PT Pro: Analiz Paneli", layout="wide")
+st.set_page_config(page_title="PT Pro: Analiz Paneli", layout="wide", page_icon="🏋️‍♂️")
 
-# --- KAS VE ANALİZ MANTIĞI (VERİTABANI) ---
+# --- CSS İLE ÖZEL TASARIM (HAVALI GÖRÜNÜM) ---
+st.markdown("""
+<style>
+    /* Genel Arka Plan ve Yazı Tipi İyileştirmeleri */
+    .stApp {
+        background-color: #0e1117;
+    }
+    
+    /* BUTON TASARIMI */
+    div.stButton > button {
+        width: 100%;
+        height: 80px;  /* Butonları büyük yap */
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Mor-Mavi Gradyan */
+        color: white !important;
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        border: none;
+        border-radius: 15px; /* Yuvarlak köşeler */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* HOVER EFEKTİ (Üzerine gelince) */
+    div.stButton > button:hover {
+        transform: translateY(-5px); /* Yukarı zıplama */
+        box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6); /* Parlama efekti */
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); /* Renk yer değiştirsin */
+        color: #ffffff !important;
+        border: none;
+    }
+
+    /* Aktif/Basılı Tutma Efekti */
+    div.stButton > button:active {
+        transform: scale(0.98);
+        box-shadow: none;
+    }
+
+    /* Başlık ve Metin Renkleri */
+    h1, h2, h3 {
+        color: #ffffff !important;
+        font-family: 'Helvetica Neue', sans-serif;
+    }
+    
+    /* Input Alanlarını Güzelleştir */
+    .stTextInput > div > div > input {
+        border-radius: 10px;
+    }
+    
+    /* Expander (Açılır Kutu) Tasarımı */
+    .streamlit-expanderHeader {
+        background-color: #262730;
+        border-radius: 10px;
+        color: white;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# --- VERİTABANI: ANALİZ MANTIĞI ---
 LOGIC_DB = {
     # 1. STATİK POSTÜR
     "Static": {
@@ -63,15 +122,14 @@ def calculate_ymca_score(gender, age, pulse):
     elif pulse < 125: return "Ortalama"
     else: return "Gelistirilmeli"
 
-# --- SESSION STATE (HAFIZA) ---
-# Sayfalar arası geçişi yönetmek için 'current_page' kullanıyoruz
+# --- SESSION STATE ---
 if 'current_page' not in st.session_state: st.session_state['current_page'] = "home"
 if 'student_data' not in st.session_state: st.session_state['student_data'] = {"name": "", "date": None, "age": 25, "gender": "Erkek"}
 for key in ['static_results', 'ohsquat_results', 'pushup_results', 'row_results', 'ohpress_results']:
     if key not in st.session_state: st.session_state[key] = []
 if 'cardio_result' not in st.session_state: st.session_state['cardio_result'] = None
 
-# --- NAVİGASYON FONKSİYONLARI ---
+# --- NAVİGASYON ---
 def go_to(page):
     st.session_state['current_page'] = page
 
@@ -115,68 +173,58 @@ def create_pdf(student_info, static_res, ohsquat_res, pushup_res, row_res, ohpre
     return pdf.output(dest='S').encode('latin-1', 'replace')
 
 # =========================================================
-# === ANA UYGULAMA AKIŞI ===
+# === UYGULAMA AKIŞI ===
 # =========================================================
 
-# --- 1. ANA MENÜ (DASHBOARD) ---
+# --- 1. DASHBOARD (ANA MENÜ) ---
 if st.session_state['current_page'] == "home":
-    st.title("🏋️‍♂️ PT Pro: Analiz Paneli")
+    st.markdown("<h1 style='text-align: center;'>🏋️‍♂️ PT Pro: Analiz Paneli</h1>", unsafe_allow_html=True)
+    st.write("")
     
-    # Öğrenci Bilgileri (Her zaman en üstte)
-    with st.expander("📝 Öğrenci Bilgileri (Düzenlemek için tıkla)", expanded=True):
+    # Öğrenci Bilgileri
+    with st.expander("📝 ÖĞRENCİ BİLGİLERİ (Girmek için tıkla)", expanded=True):
         c1, c2, c3 = st.columns(3)
         name = c1.text_input("Ad Soyad", value=st.session_state['student_data']['name'])
         age = c2.number_input("Yaş", 18, 99, st.session_state['student_data']['age'])
         gender = c3.selectbox("Cinsiyet", ["Erkek", "Kadın"], 0 if st.session_state['student_data']['gender']=="Erkek" else 1)
         date = st.date_input("Tarih", value=st.session_state['student_data']['date'])
-        
-        # Otomatik kaydetme (State güncelleme)
         st.session_state['student_data'].update({"name": name, "age": age, "gender": gender, "date": date})
 
-    st.markdown("---")
-    st.subheader("Test Menüsü")
-
-    # GRID YAPISI (Çizdiğin Resimdeki Gibi)
-    # Satır 1
+    st.write("### 🚀 TEST SEÇİMİ")
+    
+    # GRID BUTONLAR (Uniform Renk ve Tasarım)
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🧍 STATİK POSTÜR ANALİZİ", use_container_width=True, type="primary"):
-            go_to("static")
+        if st.button("🧍 STATİK POSTÜR", use_container_width=True): go_to("static")
     with col2:
-        if st.button("🏋️ OVERHEAD SQUAT ANALİZİ", use_container_width=True, type="primary"):
-            go_to("ohsquat")
+        if st.button("🏋️ OVERHEAD SQUAT", use_container_width=True): go_to("ohsquat")
             
-    # Satır 2
     col3, col4 = st.columns(2)
     with col3:
-        if st.button("💪 PUSH-UP ANALİZİ", use_container_width=True):
-            go_to("pushup")
+        if st.button("💪 PUSH-UP ANALİZİ", use_container_width=True): go_to("pushup")
     with col4:
-        if st.button("🚣 STANDING ROW ANALİZİ", use_container_width=True):
-            go_to("row")
+        if st.button("🚣 STANDING ROW", use_container_width=True): go_to("row")
             
-    # Satır 3
     col5, col6 = st.columns(2)
     with col5:
-        if st.button("🙌 OVERHEAD PRESS ANALİZİ", use_container_width=True):
-            go_to("ohpress")
+        if st.button("🙌 OVERHEAD PRESS", use_container_width=True): go_to("ohpress")
     with col6:
-        if st.button("🫀 3MIN YMCA TESTİ", use_container_width=True):
-            go_to("cardio")
+        if st.button("🫀 3MIN YMCA KARDİYO", use_container_width=True): go_to("cardio")
 
-    # Satır 4 (Büyük Sonuç Butonu)
-    st.markdown("###")
-    if st.button("📊 SONUÇ VE RAPOR OLUŞTUR", use_container_width=True, type="secondary"):
+    st.write("---")
+    # Rapor Butonu (Aynı tasarım, sadece en altta)
+    if st.button("📊 SONUÇ VE RAPORU GÖR", use_container_width=True):
         go_to("report")
 
 
-# --- 2. ALT SAYFALAR (TEST EKRANLARI) ---
+# --- 2. TEST SAYFALARI ---
 
 elif st.session_state['current_page'] == "static":
-    st.button("⬅️ Ana Menüye Dön", on_click=go_home)
-    st.header("Statik Postür Analizi")
-    t1, t2, t3 = st.tabs(["Anterior", "Lateral", "Posterior"])
+    c_back, c_title = st.columns([1, 4])
+    with c_back: st.button("⬅️ Geri", on_click=go_home)
+    with c_title: st.header("Statik Postür Analizi")
     
+    t1, t2, t3 = st.tabs(["Anterior", "Lateral", "Posterior"])
     temp = st.session_state['static_results'].copy()
     def check_static(view, con):
         items = [k for k,v in LOGIC_DB["Static"].items() if v["view"]==view]
@@ -189,8 +237,10 @@ elif st.session_state['current_page'] == "static":
     st.session_state['static_results'] = temp
 
 elif st.session_state['current_page'] == "ohsquat":
-    st.button("⬅️ Ana Menüye Dön", on_click=go_home)
-    st.header("Overhead Squat Analizi")
+    c_back, c_title = st.columns([1, 4])
+    with c_back: st.button("⬅️ Geri", on_click=go_home)
+    with c_title: st.header("Overhead Squat Analizi")
+    
     t1, t2, t3 = st.tabs(["Anterior", "Lateral", "Posterior"])
     temp = st.session_state['ohsquat_results'].copy()
     def check_ohs(view, con):
@@ -204,8 +254,10 @@ elif st.session_state['current_page'] == "ohsquat":
     st.session_state['ohsquat_results'] = temp
 
 elif st.session_state['current_page'] == "pushup":
-    st.button("⬅️ Ana Menüye Dön", on_click=go_home)
-    st.header("Push-up Analizi")
+    c_back, c_title = st.columns([1, 4])
+    with c_back: st.button("⬅️ Geri", on_click=go_home)
+    with c_title: st.header("Push-up Analizi")
+    
     temp = st.session_state['pushup_results'].copy()
     c = st.columns(2)
     for i, item in enumerate(LOGIC_DB["Pushup"].keys()):
@@ -215,8 +267,10 @@ elif st.session_state['current_page'] == "pushup":
     st.session_state['pushup_results'] = temp
 
 elif st.session_state['current_page'] == "row":
-    st.button("⬅️ Ana Menüye Dön", on_click=go_home)
-    st.header("Standing Row Analizi")
+    c_back, c_title = st.columns([1, 4])
+    with c_back: st.button("⬅️ Geri", on_click=go_home)
+    with c_title: st.header("Standing Row Analizi")
+    
     temp = st.session_state['row_results'].copy()
     c = st.columns(2)
     for i, item in enumerate(LOGIC_DB["Row"].keys()):
@@ -226,8 +280,10 @@ elif st.session_state['current_page'] == "row":
     st.session_state['row_results'] = temp
 
 elif st.session_state['current_page'] == "ohpress":
-    st.button("⬅️ Ana Menüye Dön", on_click=go_home)
-    st.header("Overhead Press Analizi")
+    c_back, c_title = st.columns([1, 4])
+    with c_back: st.button("⬅️ Geri", on_click=go_home)
+    with c_title: st.header("Overhead Press Analizi")
+    
     temp = st.session_state['ohpress_results'].copy()
     c = st.columns(2)
     for i, item in enumerate(LOGIC_DB["OHPress"].keys()):
@@ -237,25 +293,28 @@ elif st.session_state['current_page'] == "ohpress":
     st.session_state['ohpress_results'] = temp
 
 elif st.session_state['current_page'] == "cardio":
-    st.button("⬅️ Ana Menüye Dön", on_click=go_home)
-    st.header("3 Min YMCA Testi")
+    c_back, c_title = st.columns([1, 4])
+    with c_back: st.button("⬅️ Geri", on_click=go_home)
+    with c_title: st.header("3 Min YMCA Testi")
+    
     st.info("Test sonrası 1 dakikalık nabız sayımını giriniz.")
     pulse = st.number_input("Ölçülen Nabız", 40, 220)
-    if st.button("Hesapla"):
+    if st.button("HESAPLA"):
         r = calculate_ymca_score(st.session_state['student_data']['gender'], st.session_state['student_data']['age'], pulse)
         st.session_state['cardio_result'] = {"pulse": pulse, "rating": r}
         st.success(f"Sonuç: **{r}**")
 
-elif st.session_state['current_page'] == "report":
-    st.button("⬅️ Ana Menüye Dön", on_click=go_home)
-    st.title("📊 Analiz Raporu")
+# --- 3. RAPOR SAYFASI ---
 
-    # Kardiyo
+elif st.session_state['current_page'] == "report":
+    c_back, c_title = st.columns([1, 4])
+    with c_back: st.button("⬅️ Geri", on_click=go_home)
+    with c_title: st.title("📊 Analiz Raporu")
+
     if st.session_state['cardio_result']:
         res = st.session_state['cardio_result']
         st.info(f"❤️ **Kardiyo:** {res['rating']} ({res['pulse']} bpm)")
     
-    # Kas Analizi
     all_over, all_under = set(), set()
     sources = [(st.session_state['static_results'], "Static"), (st.session_state['ohsquat_results'], "OHSquat"),
                (st.session_state['pushup_results'], "Pushup"), (st.session_state['row_results'], "Row"),
@@ -274,14 +333,16 @@ elif st.session_state['current_page'] == "report":
         for m in sorted(list(all_under)): st.write(f"- {m}")
     
     st.divider()
-    if st.button("📥 PDF İndir", type="primary"):
+    
+    # PDF Butonu da aynı tasarımda olacak
+    if st.button("📥 RAPORU İNDİR (PDF)"):
         try:
             pdf_bytes = create_pdf(st.session_state['student_data'], st.session_state['static_results'], 
                                    st.session_state['ohsquat_results'], st.session_state['pushup_results'], 
                                    st.session_state['row_results'], st.session_state['ohpress_results'], 
                                    st.session_state['cardio_result'], {"overactive": all_over, "underactive": all_under})
             b64 = base64.b64encode(pdf_bytes).decode()
-            href = f'<a href="data:application/octet-stream;base64,{b64}" download="Rapor.pdf" style="background-color:#FF4B4B;color:white;padding:10px;text-decoration:none;border-radius:5px;">Dosyayı İndirmek İçin Tıkla</a>'
+            href = f'<a href="data:application/octet-stream;base64,{b64}" download="Rapor.pdf" style="background-color:white; color:#764ba2; padding:15px; text-decoration:none; border-radius:10px; font-weight:bold; display:block; text-align:center; border: 2px solid #764ba2;">📄 DOSYAYI CİHAZINA İNDİRMEK İÇİN TIKLA</a>'
             st.markdown(href, unsafe_allow_html=True)
         except Exception as e:
             st.error(f"Hata: {e}")
